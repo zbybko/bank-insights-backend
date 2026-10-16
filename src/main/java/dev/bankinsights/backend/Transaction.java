@@ -1,5 +1,6 @@
 package dev.bankinsights.backend;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -9,19 +10,22 @@ public class Transaction {
     private String state;
     private BigDecimal amount;
     private BigDecimal fee;
+    private LocalDateTime bookingDate;
 
     public Transaction(
         String description, 
         String currency,
         String state,
         BigDecimal amount,
-        BigDecimal fee
+        BigDecimal fee,
+        LocalDateTime bookingDate
     ) {
         this.description = description;
         this.currency = currency;
         this.state = state;
         this.amount = amount;
         this.fee = fee;
+        this.bookingDate = bookingDate;
     }
 
     public String getDescription() {
@@ -44,5 +48,10 @@ public class Transaction {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public BigDecimal getFee() {
         return fee;
+    }
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    public LocalDateTime getBookingDate() {
+        return bookingDate;
     }
 } 
