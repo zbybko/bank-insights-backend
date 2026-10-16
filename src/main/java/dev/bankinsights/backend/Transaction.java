@@ -1,0 +1,48 @@
+package dev.bankinsights.backend;
+import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+public class Transaction {
+    private String description;
+    private String currency;
+    private String state;
+    private BigDecimal amount;
+    private BigDecimal fee;
+
+    public Transaction(
+        String description, 
+        String currency,
+        String state,
+        BigDecimal amount,
+        BigDecimal fee
+    ) {
+        this.description = description;
+        this.currency = currency;
+        this.state = state;
+        this.amount = amount;
+        this.fee = fee;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    public BigDecimal getFee() {
+        return fee;
+    }
+} 
