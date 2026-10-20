@@ -23,15 +23,15 @@
   history. The publication scan found no private-data paths or known secret
   patterns in candidate files or historical blobs; this is not a guarantee that
   every possible secret format is detected.
-- [ ] Commit documentation and application changes as separate logical commits;
+- [x] Commit documentation and application changes as separate logical commits;
   use a branch for new work. Review `git diff` and staged paths first.
-- [ ] Create two empty GitHub repositories without generated README/license/
+- [x] Create two empty GitHub repositories without generated README/license/
   gitignore so the existing histories can be pushed directly.
-- [ ] Add the correct remote to each local repository; inspect before pushing.
+- [x] Add the correct remote to each local repository; inspect before pushing.
 - [x] Replace both READMEs' local companion links with actual GitHub URLs. Search
   for `../mobile` and `../backend` in documentation and resolve all cross-repo
   references before publication. Keep within-repository links relative.
-- [ ] Push each repository separately. Do not run `git init` in the parent and
+- [x] Push each repository separately. Do not run `git init` in the parent and
   do not delete either nested `.git` directory.
 - [ ] Set descriptions/topics, protect main where supported by your GitHub plan,
   and create issues from the task checklists. Link corresponding cross-repo work.
@@ -57,3 +57,21 @@ implementation exists; roadmap labels are not evidence of delivered features.
 The README should answer: what works, how to run it, how money and identity are
 handled, how it is tested, what is deliberately limited, and what is next.
 Readable code, focused PRs and reproducible results matter more than badges.
+
+## Publication record — 2026-10-20
+
+Published as two public repositories with the original local histories preserved:
+
+- [Backend](https://github.com/zbybko/bank-insights-backend)
+- [Mobile](https://github.com/zbybko/bank-insights-mobile)
+
+Both READMEs link to the companion repository and the original
+[legacy Python implementation](https://github.com/zbybko/bank-insights).
+The legacy repository's About description is marked LEGACY and its website
+points to the new backend. Its code, branches, issues and open PR are preserved;
+it was not deleted or archived.
+
+Before publication, the Spring context smoke test and mobile TypeScript check
+passed. A pattern/path scan of candidate files and historical blobs found no
+real-export paths or recognized secret patterns. Real CSV files remained ignored.
+CI and the synthetic demo remain outstanding tasks, not publication claims.
