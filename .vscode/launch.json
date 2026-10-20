@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start Backend",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "dev.bankinsights.backend.BackendApplication",
+      "cwd": "${workspaceFolder:backend}",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder:backend}/.env"
+    }
+  ]
+}

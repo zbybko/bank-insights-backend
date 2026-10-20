@@ -50,6 +50,19 @@ mkdir -p data
 REVOLUT_CSV_PATH="data/statement.csv" ./mvnw spring-boot:run
 ```
 
+### Run from VS Code
+
+Open this repository in VS Code (alone or as the `backend` folder in a workspace).
+Copy `.env.example` to `.env`, then set `REVOLUT_CSV_PATH` to your local CSV path.
+Select **Start Backend** in **Run and Debug** and press the play button or F5.
+Stop any existing backend process first to free port 8080.
+
+The Java launch configuration reads `.env` through `envFile`. The local `.env`
+and `data/` directory are ignored by Git; `.env.example` and the launch
+configuration can be committed. Spring Boot does not automatically load this
+`.env` when running Maven in a terminal; use the explicit environment variable
+in the command above for that workflow.
+
 Open [localhost:8080/api/transactions](http://localhost:8080/api/transactions).
 The current development config binds to `0.0.0.0` to allow iPhone testing on a
 trusted LAN. The endpoint has no authentication: use synthetic data for shared
