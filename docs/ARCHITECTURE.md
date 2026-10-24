@@ -1,108 +1,88 @@
-# Architecture: current prototype and proposed direction
+# Backend architecture
 
-## Current implementation
+One Spring Boot application, one PostgreSQL database, and a separate mobile
+repository. Packages group related behavior; they are not separate services.
+`BackendApplication` stays at the root package so Spring discovers all children.
 
-The controller receives a file path from configuration and calls the CSV parser
-on every GET. The parser constructs immutable-in-practice `Transaction` objects
-(private fields, constructor, getters), filters completed records, parses money
-and local timestamps, and sorts them. The class is not yet enforced immutable
-with final fields or constructor validation. Jackson annotations currently live
-on the same class. Mobile consumes a JSON array.
+## Ingestion
 
-There is no database, persisted import state, transaction ID, account scope,
-authentication, AI provider, or sync worker. This boundary matters when reviewing
-claims in either repository's README.
+`csv.RevolutCsvParser` reads UTF-8 named CSV columns, keeps completed rows, parses
+money as `BigDecimal` and dates as timezone-free `LocalDateTime`, then sorts by
+booking date descending. Amount and fee remain separate.
 
-```mermaid
-flowchart LR
-    subgraph Mobile["Mobile app · Expo / React Native"]
-        Screen["TransactionsScreen<br/>search and list"]
-        Hook["useTransactions<br/>loading, error, retry"]
-        Client["fetchTransactions<br/>HTTP and response validation"]
-        Screen --> Hook --> Client
-    end
+`csv.CsvImportService` reads the bytes once, hashes them with SHA-256, and looks
+up the import record. For new content it parses rows, persists the import,
+attaches its ID to every transaction, and saves them in one database transaction.
+Any exception rolls back the whole import. The unique file hash also prevents
+duplicate import records under concurrent attempts, but a losing concurrent
+request is not yet converted into an idempotent success response.
 
-    subgraph Backend["Backend · Spring Boot"]
-        Config["bankinsights.csv-path"]
-        Controller["TransactionController<br/>GET /api/transactions"]
-        Parser["RevolutCsvParser<br/>completed rows, newest first"]
-        Model["Transaction<br/>JSON serialization"]
-        Config --> Controller
-        Controller --> Parser --> Model --> Controller
-    end
+Identical bytes are deduplicated. Changed or overlapping exports can still
+produce duplicate transactions. Account identity and per-transaction source keys
+remain future work.
 
-    CSV[(Local Revolut CSV)] --> Parser
-    Client -->|"GET /api/transactions"| Controller
-    Controller -->|"JSON array"| Client
-```
-
-The CSV path is configured on the backend and is never supplied by the mobile
-request. The app validates the response shape before displaying transactions.
-
-## Proposed target: one backend application, separate mobile repository
+## Categorization and user review
 
 ```mermaid
-flowchart LR
-    CSV[CSV adapter] --> Ingest[Ingestion service]
-    Bank[Open Banking adapter] --> Ingest
-    Ingest --> DB[(Transaction repository)]
-    DB --> Analytics[Deterministic analytics]
-    DB --> Enrich[Optional AI enrichment]
-    Enrich --> DB
-    DB --> API[REST controllers / DTOs]
-    Analytics --> API
-    API --> Mobile[Expo mobile app]
+sequenceDiagram
+    participant UI as Mobile / Postman
+    participant API as TransactionController
+    participant Service as TransactionEnrichmentService
+    participant DB as PostgreSQL
+    participant AI as TransactionCategorizer
+    UI->>API: POST /transactions/{id}/enrichment
+    API->>Service: enrich(id)
+    Service->>DB: Load transaction
+    alt Already AI or USER
+        Service-->>API: Existing classification
+    else Unclassified
+        Service->>AI: Description, amount, currency
+        AI-->>Service: Validated category suggestion
+        Service->>DB: Save suggestion and review state
+    end
+    API-->>UI: Transaction JSON
+    UI->>API: PATCH /transactions/{id}/category
+    API->>Service: confirmCategory(id, category)
+    Service->>DB: Save USER category, close review
+    API-->>UI: Updated transaction
 ```
 
-These components are planned, not generated skeletons. Introduce boundaries when
-a task needs them; keep one Spring Boot application rather than microservices.
+The model gateway is accessed through `integration.astropods.AstropodsClient`.
+The Java categorizer supplies its own prompt; the separate TypeScript sandbox's
+agent instructions do not control Java requests. Model output must have exactly
+four fields with valid types and consistent question/review states.
 
-| Responsibility | Boundary |
-| --- | --- |
-| HTTP | Controllers validate request parameters and map results/errors to DTOs |
-| Ingestion | Bank adapters normalize source data; service handles atomic import and identity |
-| Persistence | Repository owns reads/writes; database constraints enforce uniqueness |
-| Analytics | Java/BigDecimal calculates facts by account, date range and currency |
-| Enrichment | AI suggests labels/explanations; user edits and deterministic facts remain authoritative |
-| Mobile | Fetch, screen state, navigation, filters, accessible presentation |
+A review-required suggestion leaves the actual category `UNCATEGORIZED`.
+User confirmation changes the actual category, preserves `suggestedCategory`,
+and removes the pending question. It does not create a merchant-wide rule.
+Model data is a suggestion; it does not change monetary facts.
 
-The API contract is owned here. Mobile models should match it and validate
-untrusted responses; TypeScript types alone do not validate JSON at runtime.
+Sequential calls preserve user choices. There is no optimistic locking yet:
+a model request racing with a manual correction can overwrite newer data.
+Do not interpret the sequential guard as a concurrency guarantee.
 
-## Decisions already established
+## Persistence and API boundaries
 
-- Java/Spring Boot and React Native/Expo are the learning and implementation stack.
-- Two Git repositories with reciprocal links, chosen by the user on 2026-10-16.
-- Exact decimal money; API decimal strings. Never add EUR and USD together.
-- A timezone-free statement timestamp is not an instant in UTC.
-- Keep bank-specific adapters so CSV and a future API share ingestion behavior.
-- UI, documentation and code identifiers in English; coaching can be in Russian.
-- The user writes the application code and makes material architecture choices.
+JPA entities and repositories live beside their features. Flyway migrations
+create the schema; Hibernate runs with `ddl-auto=validate`. HTTP endpoints
+currently serialize entities directly. Introduce response DTOs when API and
+storage representation need to evolve independently.
 
-## Decisions still open
+GET reads stored data without importing CSV or calling AI. Explicit enrichment
+loads a record, calls the model outside a long database transaction, then saves.
+Missing IDs are 404; request binding and missing categories produce 400.
+Pagination, authentication, account scoping and consistent provider-error
+responses remain to be implemented before public deployment.
 
-Open Banking provider/live eligibility, database, authentication approach, model
-provider/default, category taxonomy, and deployment are not selected. For each
-material choice, discuss 2–3 feasible options, then write a short ADR recording
-the user's decision, alternatives, consequences and evidence.
+## Verification
 
-## Financial correctness to specify before dashboards
+`*Test` classes run with `./mvnw test`, without Docker or provider credentials.
+Standalone MockMvc verifies HTTP binding and serialization without a database.
+`*IT` classes run under `-Pintegration-tests verify` using Testcontainers and a
+fresh PostgreSQL 18 instance. They check migrations, JPA mapping, import
+idempotency and atomic rollback. No automated test contacts a live model;
+mocked model responses test validation, not model accuracy or gateway availability.
 
-- Match Amount/Fee semantics against the bank format before deriving net values.
-- Own-account transfers and FX legs require treatment distinct from purchases.
-- Preserve raw and normalized descriptions separately when adding normalization.
-- Prefer provider stable transaction IDs scoped to an account. CSV identity is
-  inherently ambiguous for identical partial exports; document limitations.
-- Define pending/completed/reverted transitions before automated ingestion.
-- Reconcile category and monthly aggregates to source transactions in tests.
-
-## AI scope
-
-First useful AI feature: category suggestion with correction and review states.
-Follow with explanations of backend-calculated trends, then recurring-payment
-candidates. Avoid an unrestricted chat assistant as the first feature: there is
-no reliable financial grounding or evaluation harness yet.
-
-Keep provider secrets on the server, use synthetic demo data, and make model
-calls optional. The app must still browse stored transactions and show exact
-summaries when the bank or model provider is unavailable.
+Future analytics must separate currencies and distinguish purchases, transfers
+and income. Cash flow is not an account balance. Open Banking eligibility,
+production model configuration, authentication and deployment remain open.

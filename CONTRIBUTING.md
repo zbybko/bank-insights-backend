@@ -25,3 +25,16 @@ chat messages. Real-data AI processing is an explicit opt-in decision.
 The existing backend and mobile histories are independent. Changes spanning
 both repositories should link their PRs and document the API compatibility
 requirements. Do not merge or rewrite either history as part of documentation.
+
+## Backend verification
+
+Run `./mvnw test` for unit and standalone HTTP tests. Run
+`./mvnw clean verify -Pintegration-tests` with Docker running to include a
+throwaway PostgreSQL database, migrations, persistence and import rollback.
+No `.env` or external AI key is needed for automated tests. Use synthetic fixtures
+under `src/test/resources/fixtures/`; never copy personal statements there.
+
+Keep feature code in `transaction`, `categorization`, `csv`, or the relevant
+`integration` package. Manual Spring check runners belong in `dev` and only run
+under explicitly selected profiles. Add new migration versions rather than
+editing SQL already applied to a database.

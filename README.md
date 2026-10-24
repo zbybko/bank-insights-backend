@@ -1,129 +1,105 @@
 # Bank Insights · Backend
 
-**A Java API that turns bank statements into a transaction feed for an iPhone app.**
+Java 21 / Spring Boot API for importing personal bank statements, browsing stored
+transactions, and reviewing AI category suggestions. Companion:
+[React Native / Expo app](https://github.com/zbybko/bank-insights-mobile).
 
-Bank Insights is a personal-finance project built with Java 21 and Spring Boot.
-The current application reads a local Revolut CSV statement, keeps completed
-transactions, and returns them through a REST endpoint. Money uses `BigDecimal`
-internally and decimal strings in JSON.
+## Current behavior
 
-The direction is automatic account synchronization, useful spending dashboards,
-and AI-assisted categorization with measurable quality. These are planned
-capabilities, not features of the current prototype. Independent project; not
-affiliated with Revolut or any other bank.
-
-**Companion:** [React Native / Expo mobile app](https://github.com/zbybko/bank-insights-mobile).
-
-**Legacy implementation:** [Python bank-insights](https://github.com/zbybko/bank-insights).
-
-[Architecture and decisions](docs/ARCHITECTURE.md) · [Development workflow](CONTRIBUTING.md)
-
-## What works today
-
-- Revolut CSV parsing using Apache Commons CSV, with UTF-8 input and named columns.
-- `COMPLETED` records only; amount and fee remain separate exact decimal values.
-- Booking timestamps parsed from `Completed Date` and sorted newest first.
-- `GET /api/transactions` returns transactions to the Expo mobile app.
-- The CSV path comes from `REVOLUT_CSV_PATH`, not from the mobile request.
+- Revolut CSV import keeps `COMPLETED` rows and preserves exact amounts and fees.
+- PostgreSQL stores transactions and imports; Flyway owns schema migrations.
+- SHA-256 deduplication prevents importing identical file bytes twice, including
+  under another filename. Overlapping or edited exports are **not** deduplicated
+  at the transaction level yet.
+- AI enrichment is an explicit request through the Astropods gateway. Uncertain
+  suggestions keep the actual category `UNCATEGORIZED` and ask a question.
+- Manual confirmation records `categorySource=USER`, closes the review, and keeps
+  the original AI suggestion. Sequential enrichment skips AI and USER records.
 
 ```mermaid
 flowchart LR
-    CSV[Local Revolut CSV] --> Parser[RevolutCsvParser]
-    Parser --> Controller[TransactionController]
-    Controller --> JSON[REST / JSON]
-    JSON --> App[React Native / Expo]
+    CSV[Revolut CSV] --> Import[CSV import service]
+    Import --> DB[(PostgreSQL)]
+    DB --> API[Transaction API]
+    API --> App[Mobile / Postman]
+    API --> Enrichment[Categorization service]
+    Enrichment --> Gateway[Astropods AI gateway]
+    Enrichment --> DB
 ```
 
-The prototype reads the file again for each request. It has no persistence,
-cross-import deduplication, authentication, automatic synchronization, or AI yet.
+## Local setup
 
-## Run locally
+Requires JDK 21 and Docker Desktop. Commands run from this repository root.
 
-Requires JDK 21. The Maven wrapper downloads Maven; no global Maven installation
-is required. Commands below run from the backend repository root.
+1. Copy `.env.example` to `.env` and fill in local values. Keep real exports in
+   the ignored `data/` directory.
+2. Start PostgreSQL: `docker compose up -d postgres`.
+3. In VS Code select **Start Backend**. Its launch configuration reads `.env`.
+   For a terminal launch, export the variables into your shell first, then run
+   `./mvnw spring-boot:run`. Spring Boot does not load `.env` automatically.
+
+Flyway applies migrations on startup; Hibernate validates the schema.
+Never edit an applied migration: create a new version. Migration file changes
+are excluded from DevTools restart triggers; other changes may still restart
+Spring and run Flyway.
+
+The default development server listens on port 8080 and binds to `0.0.0.0` for
+phone testing. There is no authentication yet. Use `SERVER_ADDRESS=127.0.0.1` for
+loopback-only development and synthetic data for shared demos.
+
+### Import a statement
+
+Run with the `csv-import-check` Spring profile to import the configured
+`REVOLUT_CSV_PATH` and check that importing it again adds no rows. For example,
+append `--spring.profiles.active=csv-import-check` to the VS Code launch `args`.
+Remove the profile after checking. Import does not call AI.
+
+The `dev` package also retains opt-in `db-check` (saves a synthetic transaction)
+and `ai-check` (sends a synthetic transaction to the model and may use credits).
+These manual runners are separate from automated tests.
+
+## API
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET | `/api/transactions` | All stored transactions, newest booking date first, UUID descending for ties |
+| POST | `/api/transactions/{id}/enrichment` | Classify an unclassified record; return existing AI/USER classification otherwise |
+| PATCH | `/api/transactions/{id}/category` | Confirm or correct a category with `{"category":"GROCERIES"}` |
+
+Malformed UUIDs, malformed JSON and invalid/missing categories return 400.
+Missing transaction IDs return 404. The API currently returns entity JSON;
+amount and fee are decimal strings. `bookingDate` has no timezone because the
+CSV does not supply one. `categorizedAt` is an instant in UTC.
+
+Review fields: `category`, `suggestedCategory`, `categorySource`,
+`categoryExplanation`, `categoryReviewRequired`, `categoryQuestion`, and
+`categorizedAt`. Review fields may be null before classification. A tentative
+suggestion is not a confirmed category.
+
+[Postman collection and usage](postman/README.md).
+
+## Tests
 
 ```bash
-./mvnw -version
-mkdir -p data
-# Put your own CSV at data/statement.csv; this file is not included in Git.
-REVOLUT_CSV_PATH="data/statement.csv" ./mvnw spring-boot:run
+./mvnw test
+# Includes a disposable PostgreSQL 18 container; Docker must be running:
+./mvnw clean verify -Pintegration-tests
 ```
 
-### Run from VS Code
+Unit and standalone MockMvc tests cover CSV parsing, category states, AI response
+validation, service guards, JSON serialization and HTTP errors. Integration tests
+apply all Flyway migrations to a fresh PostgreSQL database, check identical-file
+imports and persisted review state, and verify rollback on an insert failure.
+All fixtures are synthetic. Automated tests use no real bank exports or AI keys
+and make no live model calls. CI runs the full suite on pushes and pull requests.
 
-Open this repository in VS Code (alone or as the `backend` folder in a workspace).
-Copy `.env.example` to `.env`, then set `REVOLUT_CSV_PATH` to your local CSV path.
-Select **Start Backend** in **Run and Debug** and press the play button or F5.
-Stop any existing backend process first to free port 8080.
+## Packages
 
-The Java launch configuration reads `.env` through `envFile`. The local `.env`
-and `data/` directory are ignored by Git; `.env.example` and the launch
-configuration can be committed. Spring Boot does not automatically load this
-`.env` when running Maven in a terminal; use the explicit environment variable
-in the command above for that workflow.
+- `transaction`: entity, repository, category enums and HTTP API.
+- `categorization`: suggestion contract, model output validation and enrichment.
+- `csv`: Revolut parsing, import tracking and atomic ingestion.
+- `integration.astropods`: gateway HTTP client.
+- `dev`: explicitly selected manual check profiles.
 
-Open [localhost:8080/api/transactions](http://localhost:8080/api/transactions).
-The current development config binds to `0.0.0.0` to allow iPhone testing on a
-trusted LAN. The endpoint has no authentication: use synthetic data for shared
-demos and keep this development service off the public internet. Loopback-only
-testing can use `SERVER_ADDRESS=127.0.0.1` when launching.
-
-For iPhone testing, use the Mac's LAN address instead of `localhost` and follow
-the companion mobile README. A bundled, synthetic demo statement is still a
-checklist item; a fresh clone cannot demonstrate parsing without a CSV file yet.
-
-## API example
-
-`GET /api/transactions` — current response shape; example values are fictional:
-
-```json
-[
-  {
-    "description": "Example Coffee",
-    "currency": "EUR",
-    "state": "COMPLETED",
-    "amount": "-3.50",
-    "fee": "0.00",
-    "bookingDate": "2026-10-16T09:30:00"
-  }
-]
-```
-
-`bookingDate` is a local date-time without a timezone: the current CSV format
-does not supply one. Do not silently treat it as UTC. Amount and fee are kept
-separate until the bank's statement semantics are verified in tests. Cash flow
-is not an account balance, and transfers between own accounts are not income.
-
-## Verification and current gaps
-
-```bash
-REVOLUT_CSV_PATH="data/statement.csv" ./mvnw test
-```
-
-The existing test is a Spring application-context smoke test. It does not prove
-CSV correctness or HTTP behavior. Parser, money, error-response, and API contract
-tests are first-priority tasks. There is no configured CI pipeline yet; no
-coverage or AI accuracy claim is made.
-
-## Automatic synchronization: access gate
-
-Revolut's [Open Banking API](https://developer.revolut.com/docs/guides/build-banking-apps/introduction-to-the-open-banking-api/introduction)
-is intended for regulated third-party providers. Its
-[Business API](https://developer.revolut.com/docs/guides/manage-accounts/get-started/sign-up-for-revolut-business-account)
-requires a Business account for production access. Neither is a personal-account
-API key available to this project today. Access rules checked on 2026-10-16.
-
-The first integration task is to verify a suitable Open Banking provider's
-Revolut coverage, individual-developer eligibility, price, consent flow, data
-history, and refresh limits. No provider or free production access is assumed.
-Keep CSV as a reproducible fallback; no bank-app scraping or credential capture.
-
-## Roadmap
-
-1. Reproducible demo, focused tests, and consistent API errors.
-2. Provider feasibility proof plus persistent, idempotent ingestion.
-3. Read-only account synchronization with visible freshness and failure states.
-4. Currency-separated analytics and mobile dashboards.
-5. Evaluated AI categories, manual corrections, and grounded explanations.
-
-Track implementation tasks and acceptance criteria in GitHub issues.
+[Architecture and limitations](docs/ARCHITECTURE.md) ·
+[Development workflow](CONTRIBUTING.md)
