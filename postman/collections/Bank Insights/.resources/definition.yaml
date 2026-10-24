@@ -1,0 +1,22 @@
+{
+  "$kind": "collection",
+  "name": "Bank Insights",
+  "variables": [
+    {
+      "key": "baseURL1",
+      "value": "http://localhost:8080",
+      "secret": false
+    },
+    {
+      "key": "transaction_id",
+      "value": "",
+      "description": "Manually choose a synthetic transaction UUID."
+    },
+    {
+      "key": "allow_ai_enrichment",
+      "value": "false",
+      "description": "Set true only to explicitly allow the AI POST."
+    }
+  ],
+  "description": "Local Bank Insights API. Reads stored transactions and explicitly requests AI enrichment. No provider credentials required in Postman. Live API behaviour has not been verified by creating this collection."
+}

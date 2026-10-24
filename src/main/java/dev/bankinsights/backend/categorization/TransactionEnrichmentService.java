@@ -1,8 +1,14 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.categorization;
+
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import dev.bankinsights.backend.transaction.CategorySource;
+import dev.bankinsights.backend.transaction.Transaction;
+import dev.bankinsights.backend.transaction.TransactionCategory;
+import dev.bankinsights.backend.transaction.TransactionNotFoundException;
+import dev.bankinsights.backend.transaction.TransactionRepository;
 
 @Service
 public class TransactionEnrichmentService {
@@ -23,7 +29,8 @@ public class TransactionEnrichmentService {
             return new CategorySuggestion(
                 transaction.getCategory(),
                 "Category selected by the user.",
-                false
+                false,
+                ""
             );
         }
 
@@ -37,9 +44,7 @@ public class TransactionEnrichmentService {
 
     public Transaction enrich(UUID transactionId) {
         var transaction = repository.findById(transactionId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Transaction not found")
-            );
+            .orElseThrow(TransactionNotFoundException::new);
 
         if (transaction.getCategorySource() == CategorySource.USER
             || transaction.getCategorySource() == CategorySource.AI) {
@@ -47,6 +52,18 @@ public class TransactionEnrichmentService {
         }
 
         enrich(transaction);
+
+        return repository.save(transaction);
+    }
+
+    public Transaction confirmCategory(
+        UUID transactionId,
+        TransactionCategory category
+    ) {
+        var transaction = repository.findById(transactionId)
+            .orElseThrow(TransactionNotFoundException::new);
+
+        transaction.confirmCategory(category);
 
         return repository.save(transaction);
     }

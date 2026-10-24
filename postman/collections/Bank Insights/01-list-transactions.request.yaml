@@ -1,0 +1,26 @@
+{
+  "$kind": "http-request",
+  "name": "List transactions",
+  "method": "GET",
+  "url": "{{baseURL1}}/api/transactions",
+  "headers": [
+    {
+      "key": "Accept",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "code": "if (pm.collectionVariables.get('transaction_id') === undefined) pm.collectionVariables.set('transaction_id', '');\nif (pm.collectionVariables.get('allow_ai_enrichment') === undefined) pm.collectionVariables.set('allow_ai_enrichment', 'false');\n",
+      "language": "text/javascript"
+    },
+    {
+      "type": "afterResponse",
+      "code": "pm.test('Response is JSON', () => { pm.response.json(); });\npm.test('Status is 200', () => pm.response.to.have.status(200));\npm.test('Transactions have stable IDs and decimal string amounts', () => {\n const items=pm.response.json(); pm.expect(items).to.be.an('array');\n items.forEach(t => {pm.expect(t.id).to.be.a('string');pm.expect(t.amount).to.be.a('string');pm.expect(t.currency).to.be.a('string');pm.expect(t.category).to.be.a('string');pm.expect(t.categorySource).to.be.a('string');});\n});",
+      "language": "text/javascript"
+    }
+  ],
+  "description": "Reads stored transactions, newest first. Does not import CSV or call AI. Money amounts are JSON strings. No authentication is implemented yet; intended for local development. Set transaction_id manually from a synthetic record; no real transaction is selected automatically. baseURL1 defaults to http://localhost:8080.",
+  "order": 1000
+}

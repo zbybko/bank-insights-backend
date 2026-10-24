@@ -1,0 +1,26 @@
+{
+  "$kind": "http-request",
+  "name": "Enrich transaction - explicit AI call",
+  "method": "POST",
+  "url": "{{baseURL1}}/api/transactions/{{transaction_id}}/enrichment",
+  "headers": [
+    {
+      "key": "Accept",
+      "value": "application/json"
+    }
+  ],
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "code": "if (pm.collectionVariables.get('transaction_id') === undefined) pm.collectionVariables.set('transaction_id', '');\nif (pm.collectionVariables.get('allow_ai_enrichment') === undefined) pm.collectionVariables.set('allow_ai_enrichment', 'false');\nconst id=pm.variables.get('transaction_id');\nif (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id||'')) {\n pm.execution.skipRequest(); throw new Error('Set transaction_id to a synthetic UNCLASSIFIED transaction UUID.');\n}\nif (String(pm.variables.get('allow_ai_enrichment'))!=='true') {\n pm.execution.skipRequest(); throw new Error('Set allow_ai_enrichment=true to explicitly allow this AI call.');\n}\n",
+      "language": "text/javascript"
+    },
+    {
+      "type": "afterResponse",
+      "code": "pm.test('Status is 200',()=>pm.response.to.have.status(200)); pm.test('Correct transaction',()=>{const t=pm.response.json();pm.expect(t.id.toLowerCase()).to.eql(pm.variables.get('transaction_id').toLowerCase());pm.expect(['AI','USER']).to.include(t.categorySource);});",
+      "language": "text/javascript"
+    }
+  ],
+  "description": "POST without a request body. Sends stored description, amount and currency to AI and saves its suggestion. Set transaction_id manually to a synthetic record and allow_ai_enrichment=true. Existing AI/USER records are skipped. No Gateway or PayPal secrets belong in this collection.",
+  "order": 2000
+}

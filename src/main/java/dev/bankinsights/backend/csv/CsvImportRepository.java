@@ -1,4 +1,4 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.csv;
 
 import java.util.Optional;
 import java.util.UUID;

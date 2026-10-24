@@ -1,6 +1,8 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.csv;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,26 +17,29 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.springframework.stereotype.Component;
 
-@Component 
+import dev.bankinsights.backend.transaction.Transaction;
+
+@Component
 public class RevolutCsvParser {
-    public List<Transaction> parse(Path path) throws IOException {
+    public List<Transaction> parse(byte[] content) throws IOException {
         List<Transaction> transactions = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter
-        .ofPattern("uuuu-MM-dd HH:mm:ss")
-        .withResolverStyle(ResolverStyle.STRICT);
-        
+            .ofPattern("uuuu-MM-dd HH:mm:ss")
+            .withResolverStyle(ResolverStyle.STRICT);
+
         try (
-            var reader = Files.newBufferedReader(
-                path, StandardCharsets.UTF_8
+            var reader = new InputStreamReader(
+                new ByteArrayInputStream(content),
+                StandardCharsets.UTF_8
             );
 
             var csv = CSVFormat.DEFAULT.builder()
-            .setHeader()
-            .setSkipHeaderRecord(true)
-            .get()
-            .parse(reader)
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .get()
+                .parse(reader)
         ) {
-            for (var row: csv) {
+            for (var row : csv) {
                 String state = row.get("State");
 
                 if (!"COMPLETED".equals(state)) {
@@ -50,7 +55,9 @@ public class RevolutCsvParser {
                     formatter
                 );
 
-                Transaction transaction = new Transaction(description, currency, state, amount, fee, bookingDate);
+                Transaction transaction = new Transaction(
+                    description, currency, state, amount, fee, bookingDate
+                );
 
                 transactions.add(transaction);
             }
@@ -63,5 +70,9 @@ public class RevolutCsvParser {
 
             return transactions;
         }
+    }
+
+    public List<Transaction> parse(Path path) throws IOException {
+        return parse(Files.readAllBytes(path));
     }
 }

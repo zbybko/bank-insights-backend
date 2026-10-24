@@ -1,4 +1,4 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.csv;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -9,6 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
+import dev.bankinsights.backend.transaction.Transaction;
 
 @Entity
 @Table(name = "csv_imports")

@@ -1,4 +1,4 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.transaction;
 
 public enum CategorySource {
     UNCLASSIFIED,

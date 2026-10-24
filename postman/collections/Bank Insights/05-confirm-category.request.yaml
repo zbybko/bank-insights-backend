@@ -1,0 +1,34 @@
+{
+  "$kind": "http-request",
+  "name": "Confirm transaction category",
+  "method": "PATCH",
+  "url": "{{baseURL1}}/api/transactions/{{transaction_id}}/category",
+  "headers": [
+    {
+      "key": "Accept",
+      "value": "application/json"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "body": {
+    "type": "json",
+    "content": "{\n  \"category\": \"GROCERIES\"\n}"
+  },
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "code": "const id = pm.variables.get('transaction_id');\nif (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '')) {\n  pm.execution.skipRequest();\n  throw new Error('Set transaction_id to the transaction you want to update.');\n}\n",
+      "language": "text/javascript"
+    },
+    {
+      "type": "afterResponse",
+      "code": "pm.test('Status is 200', () => pm.response.to.have.status(200));\npm.test('Selected category is confirmed by the user', () => {\n  const t = pm.response.json();\n  const sent = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));\n  pm.expect(t.id.toLowerCase()).to.eql(pm.variables.get('transaction_id').toLowerCase());\n  pm.expect(t.category).to.eql(sent.category);\n  pm.expect(t.categorySource).to.eql('USER');\n  pm.expect(t.categoryReviewRequired).to.eql(false);\n  pm.expect(t.categoryQuestion).to.eql('');\n});\n",
+      "language": "text/javascript"
+    }
+  ],
+  "description": "Manually confirms or corrects a stored transaction category. This updates the database without calling AI. Set transaction_id to the intended transaction, then edit category in the JSON body. Expected: categorySource=USER, categoryReviewRequired=false, categoryQuestion empty. The previous suggestedCategory is retained. Missing category returns 400; nonexistent transaction returns 404.",
+  "order": 5000
+}

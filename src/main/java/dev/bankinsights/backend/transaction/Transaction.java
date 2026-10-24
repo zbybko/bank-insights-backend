@@ -1,9 +1,9 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.transaction;
 
-import java.time.Instant;
-import java.util.UUID;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,12 +16,17 @@ import jakarta.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import dev.bankinsights.backend.categorization.CategorySuggestion;
+
 @Entity
 @Table(name = "transactions")
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "csv_import_id")
+    private UUID csvImportId;
 
     @Column(nullable = false, columnDefinition = "text")
     private String description;
@@ -58,8 +63,15 @@ public class Transaction {
     @Column(name = "categorized_at")
     private Instant categorizedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "suggested_category", length = 32)
+    private TransactionCategory suggestedCategory;
+
+    @Column(name = "category_question", columnDefinition = "text")
+    private String categoryQuestion;
+
     public Transaction(
-        String description, 
+        String description,
         String currency,
         String state,
         BigDecimal amount,
@@ -91,6 +103,26 @@ public class Transaction {
 
     public String getState() {
         return state;
+    }
+
+    public TransactionCategory getSuggestedCategory() {
+        return suggestedCategory;
+    }
+
+    public String getCategoryQuestion() {
+        return categoryQuestion;
+    }
+
+    public String getCategoryExplanation() {
+        return categoryExplanation;
+    }
+
+    public Boolean getCategoryReviewRequired() {
+        return categoryReviewRequired;
+    }
+
+    public Instant getCategorizedAt() {
+        return categorizedAt;
     }
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
@@ -127,10 +159,32 @@ public class Transaction {
     public void applyAiSuggestion(CategorySuggestion suggestion) {
         java.util.Objects.requireNonNull(suggestion);
 
-        assignCategory(suggestion.category(), CategorySource.AI);
+        this.suggestedCategory =
+            java.util.Objects.requireNonNull(suggestion.category());
 
+        if (suggestion.reviewRequired()) {
+            this.category = TransactionCategory.UNCATEGORIZED;
+        } else {
+            this.category = suggestion.category();
+        }
+
+        this.categorySource = CategorySource.AI;
         this.categoryExplanation = suggestion.explanation();
         this.categoryReviewRequired = suggestion.reviewRequired();
+        this.categoryQuestion = suggestion.question();
         this.categorizedAt = Instant.now();
     }
-} 
+
+    public void attachToImport(UUID importId) {
+        this.csvImportId = java.util.Objects.requireNonNull(importId);
+    }
+
+    public void confirmCategory(TransactionCategory category) {
+        assignCategory(category, CategorySource.USER);
+
+        this.categoryReviewRequired = false;
+        this.categoryQuestion = "";
+        this.categoryExplanation = "Category selected by the user.";
+        this.categorizedAt = Instant.now();
+    }
+}

@@ -1,4 +1,4 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.dev;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -6,6 +6,11 @@ import java.time.LocalDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+
+import dev.bankinsights.backend.categorization.CategorySuggestion;
+import dev.bankinsights.backend.transaction.Transaction;
+import dev.bankinsights.backend.transaction.TransactionCategory;
+import dev.bankinsights.backend.transaction.TransactionRepository;
 
 @Component
 @Profile("db-check")
@@ -31,7 +36,8 @@ public class TransactionStorageCheck implements CommandLineRunner {
         transaction.applyAiSuggestion(new CategorySuggestion(
             TransactionCategory.GROCERIES,
             "Synthetic suggestion for checking database storage.",
-            false
+            false,
+            ""
         ));
 
         var saved = repository.save(transaction);

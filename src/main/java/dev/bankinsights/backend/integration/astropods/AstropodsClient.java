@@ -1,4 +1,4 @@
-package dev.bankinsights.backend;
+package dev.bankinsights.backend.integration.astropods;
 
 import java.util.List;
 import java.util.Map;
