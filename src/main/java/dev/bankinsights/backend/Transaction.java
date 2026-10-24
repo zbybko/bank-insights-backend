@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Transaction {
+    private TransactionCategory category = TransactionCategory.UNCATEGORIZED;
+    private CategorySource categorySource = CategorySource.UNCLASSIFIED;
+
     private String description;
     private String currency;
     private String state;
@@ -54,4 +57,19 @@ public class Transaction {
     public LocalDateTime getBookingDate() {
         return bookingDate;
     }
-} 
+    public TransactionCategory getCategory() {
+        return category;
+    }
+
+    public CategorySource getCategorySource() {
+        return categorySource;
+    }
+
+    public void assignCategory(
+        TransactionCategory category,
+        CategorySource source
+    ) {
+        this.category = java.util.Objects.requireNonNull(category);
+        this.categorySource = java.util.Objects.requireNonNull(source);
+    }
+}
