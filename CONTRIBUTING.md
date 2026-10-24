@@ -4,7 +4,7 @@ This is an actively developed learning project. The owner writes the application
 code. Assistant support is for explanations, bounded scaffolds, reviews and
 verification; it must not silently complete the learning tasks.
 
-1. Pick one task ID from `docs/ROADMAP.md` and agree on the acceptance criteria.
+1. Pick one GitHub issue and agree on the acceptance criteria.
 2. Discuss material alternatives before implementation. Record accepted
    architecture choices in a short ADR under `docs/adr/`.
 3. Use a small feature branch, for example `feat/csv-parser-tests`.

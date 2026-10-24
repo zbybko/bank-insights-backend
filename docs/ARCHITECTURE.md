@@ -13,6 +13,32 @@ There is no database, persisted import state, transaction ID, account scope,
 authentication, AI provider, or sync worker. This boundary matters when reviewing
 claims in either repository's README.
 
+```mermaid
+flowchart LR
+    subgraph Mobile["Mobile app · Expo / React Native"]
+        Screen["TransactionsScreen<br/>search and list"]
+        Hook["useTransactions<br/>loading, error, retry"]
+        Client["fetchTransactions<br/>HTTP and response validation"]
+        Screen --> Hook --> Client
+    end
+
+    subgraph Backend["Backend · Spring Boot"]
+        Config["bankinsights.csv-path"]
+        Controller["TransactionController<br/>GET /api/transactions"]
+        Parser["RevolutCsvParser<br/>completed rows, newest first"]
+        Model["Transaction<br/>JSON serialization"]
+        Config --> Controller
+        Controller --> Parser --> Model --> Controller
+    end
+
+    CSV[(Local Revolut CSV)] --> Parser
+    Client -->|"GET /api/transactions"| Controller
+    Controller -->|"JSON array"| Client
+```
+
+The CSV path is configured on the backend and is never supplied by the mobile
+request. The app validates the response shape before displaying transactions.
+
 ## Proposed target: one backend application, separate mobile repository
 
 ```mermaid

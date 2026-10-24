@@ -16,8 +16,7 @@ affiliated with Revolut or any other bank.
 
 **Legacy implementation:** [Python bank-insights](https://github.com/zbybko/bank-insights).
 
-[Backend checklist](docs/ROADMAP.md) · [Architecture and decisions](docs/ARCHITECTURE.md)
-· [Development workflow](CONTRIBUTING.md) · [GitHub setup](docs/REPOSITORY_SETUP.md)
+[Architecture and decisions](docs/ARCHITECTURE.md) · [Development workflow](CONTRIBUTING.md)
 
 ## What works today
 
@@ -127,4 +126,4 @@ Keep CSV as a reproducible fallback; no bank-app scraping or credential capture.
 4. Currency-separated analytics and mobile dashboards.
 5. Evaluated AI categories, manual corrections, and grounded explanations.
 
-See the [checklist](docs/ROADMAP.md) for task IDs and acceptance criteria.
+Track implementation tasks and acceptance criteria in GitHub issues.
