@@ -38,3 +38,27 @@ Keep feature code in `transaction`, `categorization`, `csv`, or the relevant
 `integration` package. Manual Spring check runners belong in `dev` and only run
 under explicitly selected profiles. Add new migration versions rather than
 editing SQL already applied to a database.
+
+## Branches, pull requests and issue completion
+
+`main` contains integrated work. Start each bounded task from an up-to-date `main`
+in a short-lived branch: `feat/<issue>-<topic>`, `fix/<issue>-<topic>` or
+`docs/<topic>`. An epic is a tracker, not a shared long-lived implementation branch.
+Contributors work in separate branches; use Git worktrees for parallel local tasks.
+
+Open a draft PR early and link its issue. Use `Refs #N` for partial work and
+`Closes #N` only when the PR meets that issue's entire acceptance criteria. An
+individual PR must not auto-close a multi-task epic. An issue stays open while its
+code exists only in a feature branch; close it after merge and acceptance checks.
+A green build alone is not proof that the product requirements are complete.
+
+If an issue mixes completed and future work, record an explicit scope decision and
+link the remaining tasks before changing or closing it. Do not mark unimplemented
+requirements complete. Keep architecture-only PRs independent of feature branches
+where possible; if one PR genuinely depends on another, name the base/dependency.
+
+Before merging: review scope and diff, run relevant checks, address review and
+verify compatibility with other repositories. Merge through GitHub, then update
+local `main` and start the next task from it. Do not push feature work directly to
+`main`. Server-side branch protection/rulesets are separate repository settings;
+this document and the PR template do not enforce them automatically.

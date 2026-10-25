@@ -1,5 +1,9 @@
 # Backend architecture
 
+The planned Go intelligence service and user memory are documented in
+[ADR 0001](adr/0001-go-intelligence-and-user-memory.md) and the
+[implementation roadmap](INTELLIGENCE_ROADMAP.md). They are not deployed yet.
+
 One Spring Boot application, one PostgreSQL database, and a separate mobile
 repository. Packages group related behavior; they are not separate services.
 `BackendApplication` stays at the root package so Spring discovers all children.
