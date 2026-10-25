@@ -1,6 +1,6 @@
 # Bank Insights · Backend
 
-Java 21 / Spring Boot API for importing personal bank statements, browsing stored
+Java 25 LTS / Spring Boot API for importing personal bank statements, browsing stored
 transactions, and reviewing AI category suggestions. Companion:
 [React Native / Expo app](https://github.com/zbybko/bank-insights-mobile).
 
@@ -29,7 +29,22 @@ flowchart LR
 
 ## Local setup
 
-Requires JDK 21 and Docker Desktop. Commands run from this repository root.
+Income classification and user-confirmed history are described in
+[Income memory](docs/INCOME_MEMORY.md), including the opt-in AI endpoints and
+local gateway simulation. Salary-based budget periods are not implemented yet.
+
+Requires JDK 25 and Docker Desktop. Commands run from this repository root.
+On macOS select the JDK for your terminal before running Maven:
+
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
+export PATH="$JAVA_HOME/bin:$PATH"
+./mvnw --version
+```
+
+The Maven version output must show Java 25. In VS Code, use **Java: Configure
+Java Runtime** to select a JDK 25 installation for this project. The extension's
+bundled runtime is separate from the project's JDK. CI also builds with Temurin 25.
 
 1. Copy `.env.example` to `.env` and fill in local values. Keep real exports in
    the ignored `data/` directory.
