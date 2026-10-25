@@ -40,6 +40,7 @@ class CsvImportIT {
         registry.add("spring.datasource.password", postgres::getPassword);
     }
 
+    @Autowired dev.bankinsights.backend.analytics.MonthlySummaryService summaries;
     @Autowired CsvImportService service;
     @Autowired TransactionRepository transactions;
     @Autowired CsvImportRepository imports;
@@ -100,6 +101,27 @@ class CsvImportIT {
         assertThat(loaded.getCategory()).isEqualTo(TransactionCategory.UNCATEGORIZED);
         assertThat(loaded.getCategoryQuestion()).isEqualTo("What did you buy?");
         assertThat(loaded.getCategorizedAt()).isNotNull();
+    }
+
+    @Test
+    void summaryUsesCompletedRowsWithinExactMonthBoundaries() {
+        var first = new Transaction("Start of month", "EUR", "COMPLETED", new java.math.BigDecimal("100.00"),
+            java.math.BigDecimal.ZERO, java.time.LocalDateTime.of(2026, 10, 1, 0, 0));
+        var last = new Transaction("End of month", "EUR", "COMPLETED", new java.math.BigDecimal("-3.75"),
+            java.math.BigDecimal.ZERO, java.time.LocalDateTime.of(2026, 10, 31, 23, 59, 59));
+        last.confirmCategory(TransactionCategory.HEALTH);
+        var previous = new Transaction("Previous month", "EUR", "COMPLETED", new java.math.BigDecimal("50.00"),
+            java.math.BigDecimal.ZERO, java.time.LocalDateTime.of(2026, 9, 30, 23, 59, 59));
+        var next = new Transaction("Next month", "EUR", "COMPLETED", new java.math.BigDecimal("200.00"),
+            java.math.BigDecimal.ZERO, java.time.LocalDateTime.of(2026, 11, 1, 0, 0));
+        var pending = new Transaction("Pending", "EUR", "PENDING", new java.math.BigDecimal("-90.00"),
+            java.math.BigDecimal.ZERO, java.time.LocalDateTime.of(2026, 10, 3, 0, 0));
+        transactions.saveAllAndFlush(java.util.List.of(first, last, previous, next, pending));
+        var summary = summaries.summarize(java.time.YearMonth.of(2026, 10)).currencies().getFirst();
+        assertThat(summary.incoming()).isEqualTo("100.00");
+        assertThat(summary.outgoing()).isEqualTo("3.75");
+        assertThat(summary.transactionCount()).isEqualTo(2);
+        assertThat(summary.categories().getFirst().category()).isEqualTo(TransactionCategory.HEALTH);
     }
 
     private Path fixture() throws Exception {

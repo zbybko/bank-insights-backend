@@ -62,6 +62,7 @@ These manual runners are separate from automated tests.
 
 | Method | Path | Behavior |
 | --- | --- | --- |
+| GET | `/api/transactions/summary?month=YYYY-MM` | Currency-separated monthly money in, money out, net flow and category spending |
 | GET | `/api/transactions` | All stored transactions, newest booking date first, UUID descending for ties |
 | POST | `/api/transactions/{id}/enrichment` | Classify an unclassified record; return existing AI/USER classification otherwise |
 | PATCH | `/api/transactions/{id}/category` | Confirm or correct a category with `{"category":"GROCERIES"}` |
@@ -103,3 +104,5 @@ and make no live model calls. CI runs the full suite on pushes and pull requests
 
 [Architecture and limitations](docs/ARCHITECTURE.md) ·
 [Development workflow](CONTRIBUTING.md)
+
+Monthly summary uses completed booking dates with an inclusive month start and exclusive next-month start. Money in includes positive transfers and refunds; it is not verified salary. Fees remain separate. `shareBasisPoints` is the rounded share of outgoing payments (10000 = 100%). Local Expo web origins on ports 8081 and 8082 are allowed by default; override with `WEB_ALLOWED_ORIGINS`.
