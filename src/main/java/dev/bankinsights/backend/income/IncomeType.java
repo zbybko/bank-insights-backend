@@ -1,0 +1,6 @@
+package dev.bankinsights.backend.income;
+
+public enum IncomeType {
+    SALARY, SALARY_ADVANCE, BONUS, INTERNAL_TRANSFER, REFUND,
+    DEPOSIT_RETURN, INTEREST, SALES, PERSONAL_TRANSFER, OTHER, UNKNOWN
+}

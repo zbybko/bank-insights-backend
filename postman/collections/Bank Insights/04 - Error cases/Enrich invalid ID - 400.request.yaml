@@ -1,14 +1,23 @@
 {
-  "$kind": "http-request",
+  "id": "45223050-30413c76-7345-494b-94f5-8d43cdb946f0",
   "name": "Enrich invalid ID - 400",
-  "method": "POST",
+  "description": "POST without a request body. Expected 400 for a malformed UUID; no AI call expected.",
   "url": "{{baseURL1}}/api/transactions/not-a-uuid/enrichment",
+  "method": "POST",
   "headers": [
     {
       "key": "Accept",
       "value": "application/json"
     }
   ],
+  "body": {
+    "type": "text",
+    "content": ""
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "$kind": "http-request",
   "scripts": [
     {
       "type": "beforeRequest",
@@ -20,7 +29,5 @@
       "code": "pm.test('Expected status',()=>pm.response.to.have.status(400));",
       "language": "text/javascript"
     }
-  ],
-  "description": "POST without a request body. Expected 400 for a malformed UUID; no AI call expected.",
-  "order": 4000
+  ]
 }

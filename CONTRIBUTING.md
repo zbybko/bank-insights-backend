@@ -28,6 +28,10 @@ requirements. Do not merge or rewrite either history as part of documentation.
 
 ## Backend verification
 
+Use JDK 25 for Maven and VS Code project compilation/debugging. `pom.xml`
+defines the project's Java version; refresh the Maven project configuration in
+VS Code after changing it. Keep GitHub Actions on the same JDK version.
+
 Run `./mvnw test` for unit and standalone HTTP tests. Run
 `./mvnw clean verify -Pintegration-tests` with Docker running to include a
 throwaway PostgreSQL database, migrations, persistence and import rollback.

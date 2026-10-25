@@ -14,7 +14,7 @@
 	<name>Bank Insights Backend</name>
 	<description>Personal finance transaction import and categorization API</description>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 	</properties>
 	<dependencies>
 		<dependency>

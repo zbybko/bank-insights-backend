@@ -1,6 +1,6 @@
 # Bank Insights · Backend
 
-Java 21 / Spring Boot API for importing personal bank statements, browsing stored
+Java 25 LTS / Spring Boot API for importing personal bank statements, browsing stored
 transactions, and reviewing AI category suggestions. Companion:
 [React Native / Expo app](https://github.com/zbybko/bank-insights-mobile).
 
@@ -29,7 +29,22 @@ flowchart LR
 
 ## Local setup
 
-Requires JDK 21 and Docker Desktop. Commands run from this repository root.
+Income classification and user-confirmed history are described in
+[Income memory](docs/INCOME_MEMORY.md), including the opt-in AI endpoints and
+local gateway simulation. Salary-based budget periods are not implemented yet.
+
+Requires JDK 25 and Docker Desktop. Commands run from this repository root.
+On macOS select the JDK for your terminal before running Maven:
+
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
+export PATH="$JAVA_HOME/bin:$PATH"
+./mvnw --version
+```
+
+The Maven version output must show Java 25. In VS Code, use **Java: Configure
+Java Runtime** to select a JDK 25 installation for this project. The extension's
+bundled runtime is separate from the project's JDK. CI also builds with Temurin 25.
 
 1. Copy `.env.example` to `.env` and fill in local values. Keep real exports in
    the ignored `data/` directory.
@@ -62,6 +77,7 @@ These manual runners are separate from automated tests.
 
 | Method | Path | Behavior |
 | --- | --- | --- |
+| GET | `/api/transactions/summary?month=YYYY-MM` | Currency-separated monthly money in, money out, net flow and category spending |
 | GET | `/api/transactions` | All stored transactions, newest booking date first, UUID descending for ties |
 | POST | `/api/transactions/{id}/enrichment` | Classify an unclassified record; return existing AI/USER classification otherwise |
 | PATCH | `/api/transactions/{id}/category` | Confirm or correct a category with `{"category":"GROCERIES"}` |
@@ -103,3 +119,5 @@ and make no live model calls. CI runs the full suite on pushes and pull requests
 
 [Architecture and limitations](docs/ARCHITECTURE.md) ·
 [Development workflow](CONTRIBUTING.md)
+
+Monthly summary uses completed booking dates with an inclusive month start and exclusive next-month start. Money in includes positive transfers and refunds; it is not verified salary. Fees remain separate. `shareBasisPoints` is the rounded share of outgoing payments (10000 = 100%). Local Expo web origins on ports 8081 and 8082 are allowed by default; override with `WEB_ALLOWED_ORIGINS`.

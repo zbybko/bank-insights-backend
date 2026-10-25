@@ -1,22 +1,15 @@
 {
   "$kind": "collection",
+  "id": "45223050-ca1732b3-52d3-4508-8d1e-5be3dc0d26c4",
   "name": "Bank Insights",
-  "variables": [
-    {
-      "key": "baseURL1",
-      "value": "http://localhost:8080",
-      "secret": false
-    },
-    {
-      "key": "transaction_id",
-      "value": "",
-      "description": "Manually choose a synthetic transaction UUID."
-    },
-    {
-      "key": "allow_ai_enrichment",
-      "value": "false",
-      "description": "Set true only to explicitly allow the AI POST."
-    }
-  ],
-  "description": "Local Bank Insights API. Reads stored transactions and explicitly requests AI enrichment. No provider credentials required in Postman. Live API behaviour has not been verified by creating this collection."
+  "description": "Bank Insights local API. transaction_id selects an expense; income_transaction_id selects an incoming payment. Set allow_ai_enrichment=true only for explicit AI calls. summary_month accepts YYYY-MM; blank uses the current month. expense_category and income_type control confirmation bodies. No provider keys belong here.",
+  "variables": {
+    "baseURL1": "http://localhost:8080",
+    "transaction_id": "",
+    "allow_ai_enrichment": "false",
+    "income_transaction_id": "",
+    "summary_month": "",
+    "expense_category": "GROCERIES",
+    "income_type": "SALARY"
+  }
 }

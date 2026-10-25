@@ -1,0 +1,5 @@
+simulation: income-gateway
+routing: path
+mocks:
+  - routeKey: astropods
+    path: ../mocks/astropods-income/default.js

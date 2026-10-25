@@ -1,8 +1,9 @@
 {
-  "$kind": "http-request",
-  "name": "Confirm transaction category",
-  "method": "PATCH",
+  "id": "45223050-435b8a05-9bb6-4f97-a1a7-890a073f1004",
+  "name": "Confirm spending category - expenses only",
+  "description": "Spending labels require a negative amount; otherwise 400. To clear a legacy incorrect label on an incoming payment use category UNCATEGORIZED. To confirm salary use Confirm income meaning with type SALARY. Manually confirms or corrects a stored transaction category. This updates the database without calling AI. Set transaction_id to the intended transaction, then edit category in the JSON body. Expected: categorySource=USER, categoryReviewRequired=false, categoryQuestion empty. The previous suggestedCategory is retained. Missing category returns 400; nonexistent transaction returns 404.",
   "url": "{{baseURL1}}/api/transactions/{{transaction_id}}/category",
+  "method": "PATCH",
   "headers": [
     {
       "key": "Accept",
@@ -15,8 +16,12 @@
   ],
   "body": {
     "type": "json",
-    "content": "{\n  \"category\": \"GROCERIES\"\n}"
+    "content": "{\n  \"category\": \"{{expense_category}}\"\n}"
   },
+  "auth": {
+    "type": "noauth"
+  },
+  "$kind": "http-request",
   "scripts": [
     {
       "type": "beforeRequest",
@@ -28,7 +33,5 @@
       "code": "pm.test('Status is 200', () => pm.response.to.have.status(200));\npm.test('Selected category is confirmed by the user', () => {\n  const t = pm.response.json();\n  const sent = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));\n  pm.expect(t.id.toLowerCase()).to.eql(pm.variables.get('transaction_id').toLowerCase());\n  pm.expect(t.category).to.eql(sent.category);\n  pm.expect(t.categorySource).to.eql('USER');\n  pm.expect(t.categoryReviewRequired).to.eql(false);\n  pm.expect(t.categoryQuestion).to.eql('');\n});\n",
       "language": "text/javascript"
     }
-  ],
-  "description": "Manually confirms or corrects a stored transaction category. This updates the database without calling AI. Set transaction_id to the intended transaction, then edit category in the JSON body. Expected: categorySource=USER, categoryReviewRequired=false, categoryQuestion empty. The previous suggestedCategory is retained. Missing category returns 400; nonexistent transaction returns 404.",
-  "order": 5000
+  ]
 }

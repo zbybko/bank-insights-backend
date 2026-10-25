@@ -10,8 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import dev.bankinsights.backend.transaction.Transaction;
-
 @Entity
 @Table(name = "csv_imports")
 public class CsvImport {

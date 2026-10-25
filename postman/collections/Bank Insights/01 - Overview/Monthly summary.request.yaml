@@ -1,0 +1,32 @@
+{
+  "id": "45223050-3fb780be-0035-4c65-80ce-a40f63d378c7",
+  "name": "Monthly summary",
+  "description": "Completed transaction cash flow and category spending for YYYY-MM. Currencies are separate, amounts are decimal strings. Positive payments are money in, not verified income. Net excludes separate fee arithmetic and is not an account balance.",
+  "url": "{{baseURL1}}/api/transactions/summary?month={{summary_month}}",
+  "method": "GET",
+  "headers": [
+    {
+      "key": "Accept",
+      "value": "application/json"
+    }
+  ],
+  "queryParams": [
+    {
+      "key": "month",
+      "value": "{{summary_month}}"
+    }
+  ],
+  "$kind": "http-request",
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "code": "if (!pm.variables.get('summary_month')) { const d = new Date(); pm.variables.set('summary_month', `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }",
+      "language": "text/javascript"
+    },
+    {
+      "type": "afterResponse",
+      "code": "pm.test('Status is 200', () => pm.response.to.have.status(200)); pm.test('Month and currency groups', () => { const data = pm.response.json(); pm.expect(data.month).to.eql(pm.variables.get('summary_month')); pm.expect(data.currencies).to.be.an('array'); data.currencies.forEach(c => { ['incoming','outgoing','net','fees'].forEach(k => pm.expect(c[k]).to.be.a('string')); pm.expect(c.categories).to.be.an('array'); }); });",
+      "language": "text/javascript"
+    }
+  ]
+}

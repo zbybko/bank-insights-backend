@@ -12,6 +12,9 @@ import dev.bankinsights.backend.transaction.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 class TransactionEnrichmentServiceTest {
     private final TransactionCategorizer categorizer = mock(TransactionCategorizer.class);
@@ -75,5 +78,33 @@ class TransactionEnrichmentServiceTest {
         assertThat(transaction.getCategory()).isEqualTo(TransactionCategory.HEALTH);
         verifyNoInteractions(categorizer);
         verify(repository).save(transaction);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1826.97", "0.00"})
+    void nonExpensesCannotReceiveSpendingCategoriesOrCallAi(String amount) {
+        var incoming = new Transaction("Example employer", "EUR", "COMPLETED", new BigDecimal(amount),
+            BigDecimal.ZERO, LocalDateTime.of(2026, 9, 28, 8, 0));
+        incoming.assignCategory(TransactionCategory.GROCERIES, CategorySource.USER);
+        when(repository.findById(id)).thenReturn(Optional.of(incoming));
+        assertThatThrownBy(() -> service.confirmCategory(id, TransactionCategory.GROCERIES))
+            .isInstanceOfSatisfying(ResponseStatusException.class,
+                e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+        assertThatThrownBy(() -> service.enrich(id)).isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(() -> service.enrich(incoming)).isInstanceOf(ResponseStatusException.class);
+        verifyNoInteractions(categorizer);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void legacyIncorrectSpendingCategoryCanBeClearedOnIncome() {
+        var incoming = new Transaction("Example employer", "EUR", "COMPLETED", new BigDecimal("1826.97"),
+            BigDecimal.ZERO, LocalDateTime.of(2026, 9, 28, 8, 0));
+        incoming.confirmCategory(TransactionCategory.GROCERIES);
+        when(repository.findById(id)).thenReturn(Optional.of(incoming));
+        when(repository.save(incoming)).thenReturn(incoming);
+        assertThat(service.confirmCategory(id, TransactionCategory.UNCATEGORIZED).getCategory())
+            .isEqualTo(TransactionCategory.UNCATEGORIZED);
+        verifyNoInteractions(categorizer);
     }
 }
