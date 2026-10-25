@@ -1,14 +1,23 @@
 {
-  "$kind": "http-request",
+  "id": "45223050-095af42b-2fec-4fa2-b3f4-95cbad57680f",
   "name": "Enrich missing transaction - 404",
-  "method": "POST",
+  "description": "POST without a request body. Expected 404 for a nonexistent zero UUID; no AI call expected.",
   "url": "{{baseURL1}}/api/transactions/00000000-0000-0000-0000-000000000000/enrichment",
+  "method": "POST",
   "headers": [
     {
       "key": "Accept",
       "value": "application/json"
     }
   ],
+  "body": {
+    "type": "text",
+    "content": ""
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "$kind": "http-request",
   "scripts": [
     {
       "type": "beforeRequest",
@@ -20,7 +29,5 @@
       "code": "pm.test('Expected status',()=>pm.response.to.have.status(404));",
       "language": "text/javascript"
     }
-  ],
-  "description": "POST without a request body. Expected 404 for a nonexistent zero UUID; no AI call expected.",
-  "order": 3000
+  ]
 }

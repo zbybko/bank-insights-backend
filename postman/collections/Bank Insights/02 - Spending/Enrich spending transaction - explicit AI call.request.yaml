@@ -1,14 +1,23 @@
 {
-  "$kind": "http-request",
-  "name": "Enrich transaction - explicit AI call",
-  "method": "POST",
+  "id": "45223050-ce56c1ea-cafd-4557-a862-bacdc5c3274b",
+  "name": "Enrich spending transaction - explicit AI call",
+  "description": "Expenses only (negative amount). Positive/zero transactions return 400 without calling AI. For incoming payments use Classify incoming transaction with memory. POST without a request body. Sends stored description, amount and currency to AI and saves its suggestion. Set transaction_id manually to a synthetic record and allow_ai_enrichment=true. Existing AI/USER records are skipped. No Gateway or PayPal secrets belong in this collection.",
   "url": "{{baseURL1}}/api/transactions/{{transaction_id}}/enrichment",
+  "method": "POST",
   "headers": [
     {
       "key": "Accept",
       "value": "application/json"
     }
   ],
+  "body": {
+    "type": "text",
+    "content": ""
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "$kind": "http-request",
   "scripts": [
     {
       "type": "beforeRequest",
@@ -20,7 +29,5 @@
       "code": "pm.test('Status is 200',()=>pm.response.to.have.status(200)); pm.test('Correct transaction',()=>{const t=pm.response.json();pm.expect(t.id.toLowerCase()).to.eql(pm.variables.get('transaction_id').toLowerCase());pm.expect(['AI','USER']).to.include(t.categorySource);});",
       "language": "text/javascript"
     }
-  ],
-  "description": "POST without a request body. Sends stored description, amount and currency to AI and saves its suggestion. Set transaction_id manually to a synthetic record and allow_ai_enrichment=true. Existing AI/USER records are skipped. No Gateway or PayPal secrets belong in this collection.",
-  "order": 2000
+  ]
 }

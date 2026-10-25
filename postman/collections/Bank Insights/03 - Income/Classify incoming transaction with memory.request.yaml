@@ -1,0 +1,26 @@
+{
+  "id": "45223050-5e865193-5dc6-497b-a852-dfa15b3f6f19",
+  "name": "Classify incoming transaction with memory",
+  "description": "Completed positive transaction only. 400 for outgoing/pending, 404 for missing transaction. Income meaning is independent of spending category. POST explicitly calls AI once; GET before assessment returns 404. Payroll suggestions require confirmation. PATCH does not call AI.",
+  "url": "{{baseURL1}}/api/transactions/{{income_transaction_id}}/income/enrichment",
+  "method": "POST",
+  "headers": [
+    {
+      "key": "Accept",
+      "value": "application/json"
+    }
+  ],
+  "$kind": "http-request",
+  "scripts": [
+    {
+      "type": "beforeRequest",
+      "code": "if (!/^[0-9a-f-]{36}$/i.test(pm.variables.get('income_transaction_id') || '')) { pm.execution.skipRequest(); throw new Error('Set income_transaction_id to an intended incoming transaction.'); }\nif (String(pm.variables.get('allow_ai_enrichment')) !== 'true') { pm.execution.skipRequest(); throw new Error('Set allow_ai_enrichment=true to explicitly allow the AI call.'); }",
+      "language": "text/javascript"
+    },
+    {
+      "type": "afterResponse",
+      "code": "pm.test('Status is 200', () => pm.response.to.have.status(200)); pm.test('Assessment matches transaction', () => { const a=pm.response.json(); pm.expect(a.transactionId).to.eql(pm.variables.get('income_transaction_id')); pm.expect(a.reviewRequired).to.be.a('boolean'); });",
+      "language": "text/javascript"
+    }
+  ]
+}
