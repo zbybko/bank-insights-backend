@@ -28,6 +28,12 @@ public class Transaction {
     @Column(name = "csv_import_id")
     private UUID csvImportId;
 
+    @Column(name = "source_type", length = 64)
+    private String sourceType;
+
+    @Column(name = "source_product", length = 64)
+    private String sourceProduct;
+
     @Column(nullable = false, columnDefinition = "text")
     private String description;
 
@@ -91,6 +97,15 @@ public class Transaction {
 
     public UUID getId() {
         return id;
+    }
+
+    public String getSourceType() { return sourceType; }
+
+    public String getSourceProduct() { return sourceProduct; }
+
+    public void setSourceDetails(String type, String product) {
+        this.sourceType = type;
+        this.sourceProduct = product;
     }
 
     public String getDescription() {

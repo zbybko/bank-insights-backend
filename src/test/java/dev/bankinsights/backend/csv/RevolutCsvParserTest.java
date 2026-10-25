@@ -22,6 +22,8 @@ class RevolutCsvParserTest {
         assertThat(shop.getAmount()).isEqualByComparingTo("-42.50");
         assertThat(shop.getFee()).isEqualByComparingTo("0.25");
         assertThat(shop.getCurrency()).isEqualTo("EUR");
+        assertThat(shop.getSourceType()).isEqualTo("CARD_PAYMENT");
+        assertThat(shop.getSourceProduct()).isEqualTo("Current");
     }
 
     @Test

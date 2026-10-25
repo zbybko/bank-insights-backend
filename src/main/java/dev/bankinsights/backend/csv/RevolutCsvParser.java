@@ -60,6 +60,10 @@ public class RevolutCsvParser {
                 );
 
                 transactions.add(transaction);
+                transaction.setSourceDetails(
+                    row.isMapped("Type") ? row.get("Type") : null,
+                    row.isMapped("Product") ? row.get("Product") : null
+                );
             }
 
             transactions.sort(
