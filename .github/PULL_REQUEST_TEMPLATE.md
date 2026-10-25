@@ -1,21 +1,18 @@
 ## Problem and resulting behavior
 
-What concrete problem does this solve? What happens after the change?
+Describe the user-visible change and why it is needed.
 
-## Task and contract
+## Issue and scope
 
-Task: B-XX
-Companion mobile issue/PR, if needed:
-API compatibility or migration requirements:
+Refs #<!-- issue number -->
+
+Use `Closes #N` only when this PR satisfies the complete issue. Do not auto-close an epic for one task.
 
 ## Validation
 
-Commands run, relevant cases covered, and any unverified behavior:
+- Checks run and their results:
+- What remains unverified:
 
-## Decisions and limitations
+## Dependencies and compatibility
 
-Tradeoffs / ADR, known gaps, and follow-up work:
-
-- [ ] Fixtures/screenshots/logs contain only synthetic data; no credentials.
-- [ ] Documentation and contract updated when applicable.
-- [ ] I can explain the change, its failure cases and why it is correct.
+Link prerequisite PRs and mobile/API contract changes, or state none.

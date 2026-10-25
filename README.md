@@ -4,6 +4,11 @@ Java 21 / Spring Boot API for importing personal bank statements, browsing store
 transactions, and reviewing AI category suggestions. Companion:
 [React Native / Expo app](https://github.com/zbybko/bank-insights-mobile).
 
+Planned development: [Go intelligence roadmap](docs/INTELLIGENCE_ROADMAP.md),
+[architecture decision and diagrams](docs/adr/0001-go-intelligence-and-user-memory.md),
+and [epic #6](https://github.com/zbybko/bank-insights-backend/issues/6).
+The Go service and vector memory are not implemented yet.
+
 ## Current behavior
 
 - Revolut CSV import keeps `COMPLETED` rows and preserves exact amounts and fees.
