@@ -25,6 +25,21 @@ class TransactionControllerTest {
     private final UUID id = UUID.randomUUID();
     private MockMvc mvc;
 
+    @Test
+    void incomingPaymentCannotBePatchedAsGroceriesOrSentToSpendingAi() throws Exception {
+        var incoming = new Transaction("Synthetic employer", "EUR", "COMPLETED", new BigDecimal("1826.97"),
+            BigDecimal.ZERO, LocalDateTime.of(2026, 9, 28, 8, 0));
+        when(repository.findById(id)).thenReturn(java.util.Optional.of(incoming));
+        var categorizer = mock(dev.bankinsights.backend.categorization.TransactionCategorizer.class);
+        var realService = new TransactionEnrichmentService(categorizer, repository);
+        var realMvc = MockMvcBuilders.standaloneSetup(new TransactionController(repository, realService)).build();
+        realMvc.perform(patch("/api/transactions/{id}/category", id).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"category\":\"GROCERIES\"}")).andExpect(status().isBadRequest());
+        realMvc.perform(post("/api/transactions/{id}/enrichment", id)).andExpect(status().isBadRequest());
+        verifyNoInteractions(categorizer);
+        verify(repository, never()).save(any());
+    }
+
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.standaloneSetup(new TransactionController(repository, service)).build();

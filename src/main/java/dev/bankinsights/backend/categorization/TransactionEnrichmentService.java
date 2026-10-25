@@ -3,6 +3,8 @@ package dev.bankinsights.backend.categorization;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import dev.bankinsights.backend.transaction.CategorySource;
 import dev.bankinsights.backend.transaction.Transaction;
@@ -25,6 +27,7 @@ public class TransactionEnrichmentService {
     }
 
     public CategorySuggestion enrich(Transaction transaction) {
+        requireExpense(transaction);
         if (transaction.getCategorySource() == CategorySource.USER) {
             return new CategorySuggestion(
                 transaction.getCategory(),
@@ -46,6 +49,7 @@ public class TransactionEnrichmentService {
         var transaction = repository.findById(transactionId)
             .orElseThrow(TransactionNotFoundException::new);
 
+        requireExpense(transaction);
         if (transaction.getCategorySource() == CategorySource.USER
             || transaction.getCategorySource() == CategorySource.AI) {
             return transaction;
@@ -63,8 +67,17 @@ public class TransactionEnrichmentService {
         var transaction = repository.findById(transactionId)
             .orElseThrow(TransactionNotFoundException::new);
 
+        // Permit clearing a legacy incorrect spending label on an incoming payment.
+        if (category != TransactionCategory.UNCATEGORIZED) requireExpense(transaction);
         transaction.confirmCategory(category);
 
         return repository.save(transaction);
+    }
+
+    private void requireExpense(Transaction transaction) {
+        if (transaction.getAmount().signum() >= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Spending categories require a negative amount. Use /income for incoming transactions.");
+        }
     }
 }
